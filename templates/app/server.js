@@ -2,88 +2,79 @@
 var connect = require('connect')
     , express = require('express')
     , io = require('socket.io')
-    , port = (process.env.PORT || 80);
+    , port = (process.env.PORT || 8080);
+var crypto = require("crypto");
+var bodyParser = require("body-parser");
 
-//Setup Express
-var server = express.createServer();
-server.configure(function(){
-    server.set('views', __dirname + '/views');
-    server.set('view options', { layout: false });
-    server.use(connect.bodyParser());
-    server.use(express.cookieParser());
-    server.use(express.session({ secret: "shhhhhhhhh!"}));
-    server.use(connect.static(__dirname + '/static'));
-    server.use(server.router);
+var USERS = {};
+var MQ = {};
+
+var app = express();
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+app.get('/', function (req, res) {
+  res.send('asdfasdfHello World!');
 });
 
-//setup the errors
-server.error(function(err, req, res, next){
-    if (err instanceof NotFound) {
-        res.render('404.jade', { locals: { 
-                  title : '404 - Not Found'
-                 ,description: ''
-                 ,author: ''
-                 ,analyticssiteid: 'XXXXXXX' 
-                },status: 404 });
-    } else {
-        res.render('500.jade', { locals: { 
-                  title : 'The Server Encountered an Error'
-                 ,description: ''
-                 ,author: ''
-                 ,analyticssiteid: 'XXXXXXX'
-                 ,error: err 
-                },status: 500 });
-    }
-});
-server.listen( port);
-
-//Setup Socket.IO
-var io = io.listen(server);
-io.sockets.on('connection', function(socket){
-  console.log('Client Connected');
-  socket.on('message', function(data){
-    socket.broadcast.emit('server_message',data);
-    socket.emit('server_message',data);
-  });
-  socket.on('disconnect', function(){
-    console.log('Client Disconnected.');
-  });
+app.get('/users', function(req, res){
+	res.send(Object.keys(USERS));
 });
 
-
-///////////////////////////////////////////
-//              Routes                   //
-///////////////////////////////////////////
-
-/////// ADD ALL YOUR ROUTES HERE  /////////
-
-server.get('/', function(req,res){
-  res.render('index.jade', {
-    locals : { 
-              title : 'Your Page Title'
-             ,description: 'Your Page Description'
-             ,author: 'Your Name'
-             ,analyticssiteid: 'XXXXXXX' 
-            }
-  });
+app.post('/users', function(req, res){
+	if(USERS[req.body.username]){
+		res.status(406);
+		res.send("USER ALREADY EXISTS");
+	}else{
+		var hash = crypto.createHash("sha1");
+		hash.update(req.body.password);
+		var pass = hash.digest('hex');
+		USERS[req.body.username] = {
+			username: req.body.username,
+			password: pass
+		};
+		MQ[req.body.username] = [];
+		res.send("CREATED");
+	}
 });
 
-
-//A Route for Creating a 500 Error (Useful to keep around)
-server.get('/500', function(req, res){
-    throw new Error('This is a 500 Error');
+app.get('/app', function(req, res){
+	res.send("todo: this");
 });
 
-//The 404 Route (ALWAYS Keep this as the last route)
-server.get('/*', function(req, res){
-    throw new NotFound;
+app.post('/login', function(req, res){
+	if(!USERS[req.body.username]){
+		res.status(403).send("USER NOT FOUND");
+	}else{
+		var hash = crypto.createHash("sha1");
+		hash.update(req.body.password);
+		var pass = hash.digest("hex");
+		if(USERS[req.body.username].password == pass){
+			res.redirect("/app");
+		}else res.status(403).send('PASS WRONG');
+	}
+	res.end();
 });
 
-function NotFound(msg){
-    this.name = 'NotFound';
-    Error.call(this, msg);
-    Error.captureStackTrace(this, arguments.callee);
-}
+app.get("/messages/:user", function(req, res){
+	if(MQ[req.params.user]){
+		res.send(MQ[req.params.user]);
+		MQ[req.params.user] = [];
+	}else{
+		res.code(404).send("NO USER");
+	}
+});
 
+app.post("/messages/:user", function(req, res){
+	if(!MQ[req.params.user]){
+		res.status(400).send("NO USER");
+	}else{
+		MQ[req.params.user].push(req.body.message);
+		res.send("OK");
+	}
+});
 
-console.log('Listening on http://0.0.0.0:' + port );
+app.listen(port, function () {
+  console.log('Example app listening on port '+port);
+});
