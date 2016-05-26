@@ -6,13 +6,29 @@ var connect = require('connect')
 var crypto = require("crypto");
 var bodyParser = require("body-parser");
 
-var USERS = {};
-var MQ = {};
+var USERS = {
+	"nancy": {
+		"username": "nancy",
+		"password": "9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684"
+	},
+	"juan": {
+		"username": "juan",
+		"password": "9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684"
+	},
+	"uche": {
+		"username": "uche",
+		"password": "9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684"
+	}
+};
+var MQ = {
+	"main": []
+};
 
 var app = express();
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(express.static('static'));
 
 app.get('/', function (req, res) {
   res.send('asdfasdfHello World!');
@@ -51,7 +67,7 @@ app.post('/login', function(req, res){
 		hash.update(req.body.password);
 		var pass = hash.digest("hex");
 		if(USERS[req.body.username].password == pass){
-			res.redirect("/app");
+			res.redirect("/home.html");
 		}else res.status(403).send('PASS WRONG');
 	}
 	res.end();
