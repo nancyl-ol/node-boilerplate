@@ -44,14 +44,15 @@
                 <h1 style="font-family:monospace">M o r s i f i e r</h1>
                 <!-- <hr> -->
                 <!-- <p>Please sign in</p> -->
-                <form id="login" method="POST" action="http://virtualfam.westus.cloudapp.azure.com:8080/login">
+                <form name=f1 id="login" method="POST" action="http://virtualfam.westus.cloudapp.azure.com:8080/login">
                     <br>
                     <input type="text" name="username" placeholder="User Name" class="header-content-inner-input" style="font-size:17px" size="25">
                     <br>
                     <br>
                     <input type="password" name="password" placeholder="Password" class="header-content-inner-input" style="font-size:17px" size="25">
                     <br><br>
-                    <input type="submit" value="Log In" class="btn btn-primary btn-xl page-scroll">
+                    <input type="submit" value="Sign Up" class="btn btn-primary btn-xl page-scroll" onclick="f1.action='http://virtualfam.westus.cloudapp.azure.com:8080/users';return true;">
+                    <input type="submit" value="Log In" class="btn btn-primary btn-xl page-scroll" onclick="f1.action='http://virtualfam.westus.cloudapp.azure.com:8080/login'; return true;">
                 </form>  
                 <!-- <a href="../startbootstrap-sb-admin-1.0.3/create-group.html" class="btn btn-primary btn-xl page-scroll">Get Started!</a> -->
             </div>
